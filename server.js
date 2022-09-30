@@ -4,11 +4,11 @@
    o part *  of this assignment has been copied manually or electronically from any other source 
 *  (including 3rd party web sites) or distributed to other students.
 * 
-*  Name: Saetbyeol Lim Student ID: 149814212  Date:  
+*  Name: Saetbyeol Lim Student ID: 149814212  Date:  30 Sep 2022
 *
-*  Cyclic Web App URL: 
+*  Cyclic Web App URL: https://amused-teal-seal.cyclic.app
 *
-*  GitHub Repository URL: 
+*  GitHub Repository URL: https://github.com/SaetbyeolL/web322-app
 *
 ********************************************************************************/ 
 const express = require("express");
