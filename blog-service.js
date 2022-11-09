@@ -63,33 +63,27 @@ module.exports.getCategories = () => {
     })
 }
 
-//Adding an "addPost" function within blog-service.js
-module.exports.addPost = (postData) => {
-    return new Promise((resolve, reject) => {
-
-        postData.published=postData.published ? false : true;
+  module.exports.addPost = function(postData){
+    return new Promise((resolve,reject)=>{
+        postData.published = postData.published ? true : false;
         postData.id = posts.length + 1;
+
         posts.push(postData);
         resolve();
-    })
-  }
-
+    });
+}
 
 //Add the getPostsByCategory(category) Function  
-module.exports.getPostsByCategory = (category)=>{
+module.exports.getPostsByCategory = function(category){
     return new Promise((resolve,reject)=>{
-        var categoryPosts=[]
-        for(let i=0;i<posts.length;i++){
-            if(posts[i].categories ==category){
-                categoryPosts.push(posts[i])
-            }
+        let filteredPosts = posts.filter(post=>post.category == category);
+
+        if(filteredPosts.length == 0){
+            reject("no results returned")
+        }else{
+            resolve(filteredPosts);
         }
-    if(categoryPosts){
-        resolve(categoryPosts)
-    } else {
-        reject("Posts not found for this category!")
-    }
-    })
+    });
 }
 
 //Add the getPostsByMinDate(minDateStr) Function  
@@ -106,18 +100,27 @@ module.exports.getPostsByMinDate = (minDateStr)=> {
 }
 
 //Add the getPostById(id) Function  
-module.exports.getPostById = (id)=>{
+module.exports.getPostById = function(id){
     return new Promise((resolve,reject)=>{
-        for(let i=0; i<posts.length;i++){
-            var post;
-            if(posts[i].id == id) {
-                album=albums[i]
-            }
-        }
-        if(album){
-            resolve(album);
+        let foundPost = posts.find(post => post.id == id);
+
+        if(foundPost){
+            resolve(foundPost);
         }else{
             reject("no result returned");
+        }
+    });
+}
+
+//ass4
+module.exports.getPublishedPostsByCategory = function(category){
+    return new Promise((resolve,reject)=>{
+        let filteredPosts = posts.filter(post => post.category == category && post.published);
+
+        if(filteredPosts.length == 0){
+            reject("no results returned")
+        }else{
+            resolve(filteredPosts);
         }
     });
 }
