@@ -1,10 +1,10 @@
 /*********************************************************************************
-*  WEB322 – Assignment 04
+*  WEB322 – Assignment 05
 *  I declare that this assignment is my own work in accordance with Seneca  Academic Policy.  
    o part *  of this assignment has been copied manually or electronically from any other source 
 *  (including 3rd party web sites) or distributed to other students.
 * 
-*  Name: Saetbyeol Lim Student ID: 149814212  Date:  8 Nov 2022
+*  Name: Saetbyeol Lim Student ID: 149814212  Date:  19 Nov 2022
 *
 *  Cyclic Web App URL: https://amused-teal-seal.cyclic.app
 *
@@ -56,11 +56,21 @@ app.engine(".hbs", exphbs.engine({
       },
       safeHTML: function(context){
           return stripJs(context);
-      }
+      },
+      formatDate: function(dateObj){
+        let year = dateObj.getFullYear();
+        let month = (dateObj.getMonth() + 1).toString();
+        let day = dateObj.getDate().toString();
+        return `${year}-${month.padStart(2, '0')}-${day.padStart(2,'0')}`;
+    }
   }
 }));
 //call app.set() to specify the 'view engine'
 app.set('view engine', '.hbs');
+
+//ass5 middleware
+app.use(express.urlencoded({extended: true}));
+
 
 app.use(function(req,res,next){
   let route = req.path.substring(1);
@@ -133,34 +143,47 @@ app.get('/blog', async (req, res) => {
 
 });
 
-app.get("/categories", (req, res) => {
-  blogService.getCategories().then((data) => {
-    res.render("categories", {categories: data});
-  }).catch((err) => {
-    res.render("categories", {message: "no results"});
-  })
-});
-
 
 app.get('/posts', (req, res) => {
 
-  let queryPromise = null;
-  if (req.query.category) {
-      queryPromise = blogService.getPostsByCategory(req.query.category);
-  } else if (req.query.minDate) {
-      queryPromise = blogService.getPostsByMinDate(req.query.minDate);
-  } else {
-      queryPromise = blogService.getAllPosts()
-  }
+      let queryPromise = null;
+      if (req.query.category) {
+          queryPromise = blogService.getPostsByCategory(req.query.category);
+      } else if (req.query.minDate) {
+          queryPromise = blogService.getPostsByMinDate(req.query.minDate);
+      } else {
+          queryPromise = blogService.getAllPosts()
+      }
 
-  queryPromise.then(data => {
-      res.render("posts", {posts: data});
-  }).catch(err => {
-      res.render("posts", {message: "no results"});
-  })
+      queryPromise.then((data) => {
+        if(data.length > 0) {
+            res.render('posts',{ posts: data });
+        } else {
+            res.render("posts", {message: "no results"});
+        }
+    }).catch(() => {
+        res.render("posts", {message: "no results"});
+    })
 
 });
 
+
+app.get('/post/:id', (req,res)=>{
+  blogService.getPostById(req.params.id).then(data=>{
+      res.json(data);
+  }).catch(err=>{
+      res.json({message: err});
+  });
+});
+
+//Adding a routes in server.js to support the new view
+app.get('/posts/add', (req, res) => {
+  blogService.getCategories().then((data)=>{
+    res.render("addPost", {categories: data});
+  }).catch(()=>{
+    res.render("addPost", {categories: []}); 
+  })
+}); 
 
 //Adding the "Post" route 
 app.post("/posts/add", upload.single("featureImage"), (req, res) => {
@@ -205,18 +228,6 @@ app.post("/posts/add", upload.single("featureImage"), (req, res) => {
   } 
 });
 
-app.get('/post/:id', (req,res)=>{
-  blogService.getPostById(req.params.id).then(data=>{
-      res.json(data);
-  }).catch(err=>{
-      res.json({message: err});
-  });
-});
-
-//Adding a routes in server.js to support the new view
-app.get('/posts/add', (req, res) => {
-  res.render("addPost");
-}); 
 
 
 //Add the "/post/value" route 
@@ -269,6 +280,49 @@ app.get('/blog/:id', async (req, res) => {
   // render the "blog" view with all of the data (viewData)
   res.render("blog", {data: viewData})
 });
+
+app.get("/categories", (req, res) => {
+  blogService.getCategories().then((data) => {
+    if(data.length > 0) {
+      res.render('categories',{ categories: data });
+    } else {
+      res.render("categories", {message: "no results"});
+    }
+  }).catch(() => {
+    res.render("categories", {message: "no results"});
+  });
+});
+
+//ass5
+app.get("/categories/add", (req,res)=>{
+  res.render("addCategory");
+})
+
+app.post("/categories/add", (req, res) => {
+  blogService.addCategory(req.body).then(category => {
+      res.redirect('/categories');
+    })
+    .catch(err=>{
+      res.status(500).send(err);
+    })
+});
+
+app.get("/categories/delete/:id", (req,res)=> {
+  blogService.deleteCategoryById(req.params.id).then((category) => {
+    res.redirect("/categories");
+  }).catch(err => {
+    res.status(500).send("Unable to Remove Category / Category not found");
+  });
+});
+
+app.get("/posts/delete/:id",(req,res)=>{
+  blogService.deletePostById(req.params.id).then(() => {
+    res.redirect("/posts");
+  }).catch((err) =>{
+    res.status(500).send("Unable to Remove Post / Post not found");
+  });
+});
+
 
 //no matching route 
 app.use((req, res) => {
