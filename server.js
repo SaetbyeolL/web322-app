@@ -1,10 +1,10 @@
 /*********************************************************************************
-*  WEB322 – Assignment 05
+*  WEB322 – Assignment 06
 *  I declare that this assignment is my own work in accordance with Seneca  Academic Policy.  
    o part *  of this assignment has been copied manually or electronically from any other source 
 *  (including 3rd party web sites) or distributed to other students.
 * 
-*  Name: Saetbyeol Lim Student ID: 149814212  Date:  19 Nov 2022
+*  Name: Saetbyeol Lim Student ID: 149814212  Date: 3rd Dec 2022
 *
 *  Cyclic Web App URL: https://amused-teal-seal.cyclic.app
 *
@@ -24,6 +24,10 @@ const streamifier = require('streamifier');
 //ass4
 const exphbs = require("express-handlebars");
 const stripJs = require('strip-js');
+//ass6
+const authData = require("./auth-service.js");
+const clientSessions = require("client-sessions");
+
 
 
 cloudinary.config({
@@ -79,6 +83,26 @@ app.use(function(req,res,next){
   next();
 });
 
+//ass6client-sessions middleware
+app.use(clientSessions({
+  cookieName : "session",
+  secret :"assignment6_web322",// this should be a long un-guessable string.
+  duration : 2 * 60 * 1000,
+  activeDuration: 1000 * 60 
+}));
+//ass6 middleware
+app.use(function(req, res, next) {
+  res.locals.session = req.session;
+  next();
+});
+//ass6
+function ensureLogin(req, res, next) {
+  if (!req.session.user) {
+    res.redirect("/login");
+  } else {
+    next();
+  }
+}
 
 //// call this function after the http server starts listening for requests
 function onHttpStart() {
@@ -143,8 +167,56 @@ app.get('/blog', async (req, res) => {
 
 });
 
+//ass6 get/login
+app.get("/login",(req,res)=>{
+  res.render("login");
+})
+//ass6 get/register
+app.get("/register",(req,res)=>{
+  res.render("register");
+})
+//ass6 post/register
+app.post("/register",(req,res)=>{
+  authData.registerUser(req.body)
+  .then(()=>{
+      res.render("register",{successMessage: "User created"});})
+      .catch((err)=>{
+      res.render("register",{errorMessage: err, userName: req.body.userName});
+  })
+})
+//ass6 post/login
+app.post("/login",(req,res)=>{
 
-app.get('/posts', (req, res) => {
+  req.body.userAgent = req.get('User-Agent');
+  
+  authData.checkUser(req.body).then((user) => {
+      req.session.user = {
+          userName: user.userName,
+          email: user.email,
+          loginHistory: user.loginHistory
+      }
+      res.redirect('/posts');
+  }).catch((err)=>{
+      res.render("login",{errorMessage: err, userName: req.body.userName})
+  })
+})
+//ass6 get/logout
+app.get("/logout",(req,res)=>{
+  req.session.reset();
+  res.redirect("/");
+})
+//ass6 get/userHistory
+app.get("/userHistory",ensureLogin ,(req,res)=>{
+  res.render('userHistory')
+})
+
+
+
+
+
+
+
+app.get('/posts', ensureLogin, (req, res) => {
 
       let queryPromise = null;
       if (req.query.category) {
@@ -168,7 +240,7 @@ app.get('/posts', (req, res) => {
 });
 
 
-app.get('/post/:id', (req,res)=>{
+app.get('/post/:id', ensureLogin, (req,res)=>{
   blogService.getPostById(req.params.id).then(data=>{
       res.json(data);
   }).catch(err=>{
@@ -177,7 +249,7 @@ app.get('/post/:id', (req,res)=>{
 });
 
 //Adding a routes in server.js to support the new view
-app.get('/posts/add', (req, res) => {
+app.get('/posts/add', ensureLogin, (req, res) => {
   blogService.getCategories().then((data)=>{
     res.render("addPost", {categories: data});
   }).catch(()=>{
@@ -186,7 +258,7 @@ app.get('/posts/add', (req, res) => {
 }); 
 
 //Adding the "Post" route 
-app.post("/posts/add", upload.single("featureImage"), (req, res) => {
+app.post("/posts/add", upload.single("featureImage"),ensureLogin, (req, res) => {
   if(req.file){
     let streamUpload = (req) => {
         return new Promise((resolve, reject) => {
@@ -281,7 +353,7 @@ app.get('/blog/:id', async (req, res) => {
   res.render("blog", {data: viewData})
 });
 
-app.get("/categories", (req, res) => {
+app.get("/categories", ensureLogin, (req, res) => {
   blogService.getCategories().then((data) => {
     if(data.length > 0) {
       res.render('categories',{ categories: data });
@@ -294,11 +366,11 @@ app.get("/categories", (req, res) => {
 });
 
 //ass5
-app.get("/categories/add", (req,res)=>{
+app.get("/categories/add", ensureLogin, (req,res)=>{
   res.render("addCategory");
 })
 
-app.post("/categories/add", (req, res) => {
+app.post("/categories/add", ensureLogin, (req, res) => {
   blogService.addCategory(req.body).then(category => {
       res.redirect('/categories');
     })
@@ -307,7 +379,7 @@ app.post("/categories/add", (req, res) => {
     })
 });
 
-app.get("/categories/delete/:id", (req,res)=> {
+app.get("/categories/delete/:id", ensureLogin, (req,res)=> {
   blogService.deleteCategoryById(req.params.id).then((category) => {
     res.redirect("/categories");
   }).catch(err => {
@@ -315,7 +387,7 @@ app.get("/categories/delete/:id", (req,res)=> {
   });
 });
 
-app.get("/posts/delete/:id",(req,res)=>{
+app.get("/posts/delete/:id", ensureLogin, (req,res)=>{
   blogService.deletePostById(req.params.id).then(() => {
     res.redirect("/posts");
   }).catch((err) =>{
@@ -329,14 +401,15 @@ app.use((req, res) => {
   res.status(404).send('Page Not Found');
 });
 
-
-blogService.initialize().then(() => {
-  app.listen(HTTP_PORT, onHttpStart)
-}).catch((err) => {
-  console.log(err);
-})
-
-
+//ass6 update(authData.initialize)
+blogService.initialize().then(authData.initialize)
+.then(function(){
+    app.listen(HTTP_PORT, function(){
+        console.log("app listening on: " + HTTP_PORT)
+    });
+}).catch(function(err){
+    console.log("unable to start server: " + err);
+});
 
 
 
