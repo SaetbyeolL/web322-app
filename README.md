@@ -2,8 +2,7 @@
 Creating blog service application
 https://amused-teal-seal.cyclic.app
 
-![Web development screen](https://github.com/saetbyeolL/WEB322/raw/main/BlogScreenShot.jpg)
-
+![Web development screen](https://github.com/saetbyeolL/WEB322/raw/master/BlogScreenShot.jpg)
 
 - Technologies: JS, HTML, CSS,  node.js, express.js, middleware, Bootstrap, webAPI, AJAX, mongoDB, bcrypt.js
 - Function: Login/Register, Post, Categories,  User history
