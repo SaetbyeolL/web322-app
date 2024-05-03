@@ -4,7 +4,7 @@ https://amused-teal-seal.cyclic.app
 
 ![Web development screen](https://github.com/saetbyeolL/web322-app/raw/master/BlogScreenShot.jpg)
 
-- Technologies: JS, HTML, CSS,  node.js, express.js, middleware, Bootstrap, webAPI, AJAX, mongoDB, bcrypt.js
+- Technologies: JS, HTML, CSS,  node.js, express.js, middleware, Bootstrap, webAPI, AJAX, PostgreSQL, MongoDB, bcrypt.js
 - Function: Login/Register, Post, Categories,  User history
 
 - Created and published a web app that uses multiple route which serve static files (HTML & CSS). 
