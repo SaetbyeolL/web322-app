@@ -1,6 +1,6 @@
 # web322-app
 Creating blog service application
-https://amused-teal-seal.cyclic.app
+https://myblogapp-u85k.onrender.com
 
 ![Web development screen](https://github.com/saetbyeolL/web322-app/raw/master/BlogScreenShot.jpg)
 
